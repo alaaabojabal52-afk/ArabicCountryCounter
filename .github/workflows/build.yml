@@ -15,7 +15,7 @@ jobs:
 
       - name: Unzip project
         run: |
-          unzip ArabicCountryCounter_Ready.zip
+          unzip -o ArabicCountryCounter_Ready.zip
           ls -la
           ls -la arab_countries
 
@@ -28,11 +28,22 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Fix memory and create wrapper
+        working-directory: arab_countries
+        run: |
+          cat > gradle.properties << EOF
+          org.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          kotlin.code.style=official
+          android.nonTransitiveRClass=true
+          EOF
+          gradle wrapper --gradle-version 8.9 || true
+
       - name: Build Debug APK
         working-directory: arab_countries
         run: |
           chmod +x gradlew || true
-          ./gradlew assembleDebug --no-daemon || gradle assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
